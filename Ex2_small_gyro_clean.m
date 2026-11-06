@@ -4,7 +4,8 @@
 %
 % Produces
 %   Table 3  : B_tan,i (22) and the standard tan(Theta) bound (40) for x_1, x_2
-%              at eps = 1e-7, with the corresponding gaps
+%              at eps = 1e-7, with the corresponding gaps; a separate random
+%              perturbation dG is drawn for each eigenvector
 %   Figure 2 : bound ratio_2 = standard bound / B_tan,i  for
 %              eps = 1e-4 ... 1e-9
 %   accuracy : residuals, gaps, ||r||/gap
@@ -90,17 +91,18 @@ end
 %% ======================= local functions ==================================
 function [Btan, Bstd, gap_mu, gap_lam, acc] = one_perturbation(G, AL, U, mu, idx, eps_pert, LKi, std_variant)
 n = size(G,1);  N = 2*n;
-R  = rand(n);  dG = eps_pert*((R+R.')/2).*G;            % skew-symmetric, |dG_ij| <= eps|G_ij|
-dAL = blkdiag(LKi*(1i*dG)*LKi', zeros(n));  dAL = (dAL+dAL')/2;
-ALt = AL + dAL;                                          % delta I = 0
-[Ut, Dt] = eig(ALt);  mut = real(diag(Dt));  [mut, p] = sort(mut,'ascend');  Ut = Ut(:,p);
-lam = 1./mu;  lamt = 1./mut;
-ndALF = norm(dAL,'fro');                                 % alpha = 1, ||Ut||_2 = 1 (delta I = 0)
-
 k = numel(idx);
 Btan = zeros(k,1); Bstd = zeros(k,1); gap_mu = zeros(k,1); gap_lam = zeros(k,1);
 res_pert = zeros(k,1); gap_pert = zeros(k,1);
+lam = 1./mu;
 for q = 1:k
+    % a separate random perturbation is drawn for each eigenvector x_q
+    R  = rand(n);  dG = eps_pert*((R+R.')/2).*G;        % skew-symmetric, |dG_ij| <= eps|G_ij|
+    dAL = blkdiag(LKi*(1i*dG)*LKi', zeros(n));  dAL = (dAL+dAL')/2;
+    ALt = AL + dAL;                                      % delta I = 0
+    [Ut, Dt] = eig(ALt);  mut = real(diag(Dt));  [mut, p] = sort(mut,'ascend');  Ut = Ut(:,p);
+    lamt = 1./mut;
+    ndALF = norm(dAL,'fro');                             % alpha = 1, ||Ut||_2 = 1 (delta I = 0)
     i = idx(q);  oth = [1:i-1, i+1:N];
     gap_mu(q)  = min(abs(mut(i) - mu(oth)));
     gap_lam(q) = min(abs(lam(i) - lamt(oth)));
